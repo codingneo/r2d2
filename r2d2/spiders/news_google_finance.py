@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import scrapy
+from bs4 import BeautifulSoup
 from collections import Counter
 from scrapy.contrib.loader import ItemLoader
 from googlefinance import getNews
@@ -22,8 +23,12 @@ class NewsGoogleFinanceSpider(scrapy.Spider):
     	print "parse: ", response.url
     	title = response.xpath('//title/text()').extract()[0]
     	p_elements = response.xpath("//body//p")
-    	p_elements = [node for node in p_elements if (not not node.xpath("./text()").extract()) and (not not ' '.join(node.xpath("..//p/text()").extract()).strip())]
-    	parent_counts = Counter([' '.join(node.xpath("..//p/text()").extract()).strip() for node in p_elements])
+    	p_elements = [node for node in p_elements 
+    		if (not not node.xpath("./text()").extract()) and 
+    			(not not ' '.join(node.xpath("..//p/text()").extract()).strip())]
+    	parent_counts = Counter(
+    		[' '.join(node.xpath("..//p/descendant::text()[not(parent::script)]").extract()).strip() 
+    			for node in p_elements])
     	content = parent_counts.most_common()[0][0]
     	# content = ' '.join(response.xpath("//body//p//text()").extract()).strip()
     	item = NewsItem(url=response.url, title=title, content=content)
